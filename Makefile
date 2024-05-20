@@ -132,6 +132,7 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_helloworld
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -145,6 +146,11 @@ clean:
 	mkfs/mkfs .gdbinit \
         $U/usys.S \
 	$(UPROGS)
+
+$U/_helloworld: $U/helloworld.o $(ULIB)
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $U/_helloworld $U/helloworld.o $U/ulib.o $U/usys.o
+	$(OBJDUMP) -S $U/_helloworld > $U/helloworld.asm
+	$(OBJDUMP) -t $U/_helloworld | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $U/helloworld.sym
 
 # try to generate a unique GDB port
 GDBPORT = $(shell expr `id -u` % 5000 + 25000)
