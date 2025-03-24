@@ -10,7 +10,10 @@ uint64
 sys_exit(void)
 {
   int n;
+  char msg[32];
   argint(0, &n);
+  argstr(1, msg, sizeof(msg));
+  strncpy(myproc()->exit_msg, msg, sizeof(myproc()->exit_msg));
   exit(n);
   return 0;  // not reached
 }
@@ -31,8 +34,12 @@ uint64
 sys_wait(void)
 {
   uint64 p;
+  uint64 msg_addr;
+
   argaddr(0, &p);
-  return wait(p);
+  argaddr(1, &msg_addr);
+
+  return wait(p, msg_addr);
 }
 
 uint64
@@ -88,4 +95,11 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64
+sys_memsize(void)
+{
+  struct proc *p = myproc();
+  return p->sz;
 }
