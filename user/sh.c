@@ -146,6 +146,7 @@ int
 main(void)
 {
   static char buf[100];
+  char exit_msg[32];
   int fd;
 
   // Ensure that three file descriptors are open.
@@ -167,9 +168,9 @@ main(void)
     }
     if(fork1() == 0)
       runcmd(parsecmd(buf));
-    char exit_msg[32];
     wait(0, exit_msg);
     printf("%s\n", exit_msg);
+    exit_msg[0] = 0;
   }
   exit(0, "");
 }

@@ -6,6 +6,8 @@
 #include "spinlock.h"
 #include "proc.h"
 
+extern int forkn(int n, int *pids);
+extern int waitall(int* n, int* statuses);
 uint64
 sys_exit(void)
 {
@@ -108,7 +110,7 @@ uint64
 sys_forkn(void)
 {
   int n;
-  int* pids;
+  int pids[16];
   uint64 pids_addr;
   struct proc *p = myproc();
   argint(0, &n);
@@ -123,8 +125,8 @@ sys_waitall(void)
 {
   uint64 n;
   uint64 statuses;
-  int* num;
-  int* stat;
+  int num[1];
+  int stat[NPROC];
   struct proc *p = myproc();
   argaddr(0, &n);
   argaddr(1, &statuses);

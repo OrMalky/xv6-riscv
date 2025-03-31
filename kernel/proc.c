@@ -328,7 +328,7 @@ fork(void)
 int
 forkn(int n, int* pids){
   struct proc* children[16];
-  if (n <= 1 && n>16)
+  if (n <= 1 || n>16)
     return -1;
   
   for (int j=0;j<n;j++){
@@ -400,7 +400,7 @@ forkn(int n, int* pids){
 int
 waitall(int* n, int* statuses) {
   struct proc *pp;
-  int havekids, pid;
+  int havekids;
   struct proc *p = myproc();
   int count = 0;
   acquire(&wait_lock);
@@ -413,16 +413,16 @@ waitall(int* n, int* statuses) {
         // make sure the child isn't still in exit() or swtch().
         acquire(&pp->lock);
 
-        havekids = 1;
         if(pp->state == ZOMBIE){
           // Found one.
-          pid = pp->pid;
           statuses[count] = pp->xstate;
           count++;
           freeproc(pp);
           release(&pp->lock);
+          havekids = 0;
         } else {
           release(&pp->lock);
+          havekids = 1;
         }
       }
     }
