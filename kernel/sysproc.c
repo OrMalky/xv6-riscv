@@ -103,3 +103,35 @@ sys_memsize(void)
   struct proc *p = myproc();
   return p->sz;
 }
+
+uint64
+sys_forkn(void)
+{
+  int n;
+  int* pids;
+  uint64 pids_addr;
+  struct proc *p = myproc();
+  argint(0, &n);
+  argaddr(1, &pids_addr);
+  int ret = forkn(n, pids);
+  copyout(p->pagetable, pids_addr, (char*)pids, sizeof(int) * n);
+  return ret;
+}
+
+uint64
+sys_waitall(void)
+{
+  uint64 n;
+  uint64 statuses;
+  int* num;
+  int* stat;
+  struct proc *p = myproc();
+  argaddr(0, &n);
+  argaddr(1, &statuses);
+  int ret = waitall(num, stat);
+  if (ret!=-1){
+    copyout(p->pagetable, n, (char*)num, sizeof(int));
+    copyout(p->pagetable, statuses, (char*)stat, sizeof(int)*(*num));
+  }
+  return ret;
+}

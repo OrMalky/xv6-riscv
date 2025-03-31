@@ -325,6 +325,122 @@ fork(void)
   return pid;
 }
 
+int
+forkn(int n, int* pids){
+  struct proc* children[16];
+  if (n <= 1 && n>16)
+    return -1;
+  
+  for (int j=0;j<n;j++){
+    int i, pid;
+    struct proc *np;
+    struct proc *p = myproc();
+
+    // Allocate process. if one fails, free all the others.
+    if((np = allocproc()) == 0){
+      for (int k = 0; k < j; k++){
+        struct proc *pp = children[k];
+        acquire(&pp->lock);
+        freeproc(pp);
+        release(&pp->lock);
+      }
+      return -1;
+    }
+    children[j] = np;
+
+    // Copy user memory from parent to child.
+    if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+      for (int k = 0; k <= j; k++){
+        struct proc *pp = children[k];
+        acquire(&pp->lock);
+        freeproc(pp);
+        release(&pp->lock);
+      }
+      return -1;
+    }
+    np->sz = p->sz;
+
+
+    // copy saved user registers.
+    *(np->trapframe) = *(p->trapframe);
+
+    // Cause fork to return 0 in the child.
+    np->trapframe->a0 = j+1;
+
+    // increment reference counts on open file descriptors.
+    for(i = 0; i < NOFILE; i++)
+    if(p->ofile[i])
+      np->ofile[i] = filedup(p->ofile[i]);
+    np->cwd = idup(p->cwd);
+
+    safestrcpy(np->name, p->name, sizeof(p->name));
+
+    pid = np->pid;
+
+    release(&np->lock);
+
+    acquire(&wait_lock);
+    np->parent = p;
+    release(&wait_lock);
+    
+    pids[j]=pid;
+  
+  }
+
+  for (int j = 0; j < n; j++){
+    struct proc *np = children[j];
+    acquire(&np->lock);
+    np->state = RUNNABLE;
+    release(&np->lock);
+  }
+  
+  return 0;
+}
+
+int
+waitall(int* n, int* statuses) {
+  struct proc *pp;
+  int havekids, pid;
+  struct proc *p = myproc();
+  int count = 0;
+  acquire(&wait_lock);
+
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(pp = proc; pp < &proc[NPROC]; pp++){
+      if(pp->parent == p){
+        // make sure the child isn't still in exit() or swtch().
+        acquire(&pp->lock);
+
+        havekids = 1;
+        if(pp->state == ZOMBIE){
+          // Found one.
+          pid = pp->pid;
+          statuses[count] = pp->xstate;
+          count++;
+          freeproc(pp);
+          release(&pp->lock);
+        } else {
+          release(&pp->lock);
+        }
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || killed(p)){
+      release(&wait_lock);
+      *n = count;
+      return 0;
+    }
+    
+    // Wait for a child to exit.
+    sleep(p, &wait_lock);  //DOC: wait-sleep
+  }
+  return -1;
+}
+
+
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
 void
