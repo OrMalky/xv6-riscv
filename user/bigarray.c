@@ -3,7 +3,7 @@
 #include "kernel/param.h"
 
 #define SIZE 65536 
-#define NPROCS 64
+#define NPROCS 4
 
 int main() {
     static int arr[SIZE];
