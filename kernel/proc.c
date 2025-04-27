@@ -422,7 +422,6 @@ waitall(int* n, int* statuses) {
           count++;
           freeproc(pp);
           release(&pp->lock);
-          havekids = 0;
         } else {
           release(&pp->lock);
           havekids = 1;
@@ -431,7 +430,7 @@ waitall(int* n, int* statuses) {
     }
 
     // No point waiting if we don't have any children.
-    if(!havekids || killed(p)){
+    if(!havekids || killed(p) ){
       release(&wait_lock);
       *n = count;
       return 0;
