@@ -327,9 +327,12 @@ fork(void)
 
 int
 forkn(int n, int* pids){
+
   struct proc* children[16];
-  if (n <= 1 || n>16)
+
+  if (n < 1 || n > 16){
     return -1;
+  }
   
   for (int j=0;j<n;j++){
     int i, pid;

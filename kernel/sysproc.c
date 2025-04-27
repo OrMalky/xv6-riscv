@@ -15,7 +15,7 @@ sys_exit(void)
   char msg[32];
   argint(0, &n);
   argstr(1, msg, sizeof(msg));
-  strncpy(myproc()->exit_msg, msg, sizeof(myproc()->exit_msg));
+  safestrcpy(myproc()->exit_msg, msg, sizeof(myproc()->exit_msg));
   exit(n);
   return 0;  // not reached
 }
@@ -116,6 +116,8 @@ sys_forkn(void)
   argint(0, &n);
   argaddr(1, &pids_addr);
   int ret = forkn(n, pids);
+  if (ret == -1)
+    return -1;
   copyout(p->pagetable, pids_addr, (char*)pids, sizeof(int) * n);
   return ret;
 }

@@ -1,14 +1,16 @@
 #include "kernel/types.h"
 #include "user/user.h"
+#include "kernel/param.h"
 
 #define SIZE 65536 // 2^16
-#define NPROCS 4 // Number of child processes
+#define NPROCS 4  // Requested number of child processes
 
-int main(){
-    int* arr = malloc(SIZE * sizeof(int));
-    int* pids = malloc(NPROCS * sizeof(int));
-    int* n = malloc(sizeof(int));
-    int* statuses = malloc(NPROCS * sizeof(int));
+int main() {
+    static int arr[SIZE];
+    int pids[NPROCS];
+    int n;
+    int statuses[NPROC]; // Allocate for maximum possible children
+
     int sum = 0;
 
 
@@ -16,19 +18,18 @@ int main(){
     for (int i = 0; i < SIZE; i++){
         arr[i] = i;
     }
-
     int i = forkn(NPROCS, pids);
 
     if (i == -1){
         exit(-1,"forkn failed");
-
+     
     } else if (i == 0){
         // Parent process
-        waitall(n, statuses);
+        waitall(&n, statuses);
         printf("\n");
 
-        if (*n != NPROCS) {
-            exit(-(*n), "waitall error");
+        if (n != NPROCS) {
+            exit(-1, "waitall error");
         }
 
         for (int j = 0; j < NPROCS; j++) {
@@ -37,6 +38,7 @@ int main(){
         }
 
         printf("Total sum: %d\n", sum);
+
         exit(0,"completed");
 
     } else {
@@ -53,9 +55,5 @@ int main(){
         exit(sum, "");
     }
 
-    free(arr);
-    free(pids);
-    free(n);
-    free(statuses);
     return 0;
 }
